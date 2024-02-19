@@ -9,7 +9,7 @@ project(bayan VERSION ${PROJECT_VERSION})
 option(WITH_TEST "Whether to build Google test" ON)
 option(WITH_CLANG_TIDY "use clang-tidy" OFF)
 
-find_package(Boost REQUIRED COMPONENTS system filesystem)
+find_package(Boost REQUIRED COMPONENTS system filesystem program_options)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -23,7 +23,7 @@ configure_file(version.h.in version.h)
 
 add_executable(bayan main.cpp)
 
-target_link_libraries(bayan Boost::filesystem)
+target_link_libraries(bayan Boost::filesystem Boost::program_options)
 
 set_target_properties(bayan PROPERTIES
     CXX_STANDARD 20
