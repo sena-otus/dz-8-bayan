@@ -8,6 +8,7 @@ Checks: "*,
         -llvm*,
         -modernize-use-trailing-return-type,
 	-readability-identifier-length,
+	-bugprone-easily-swappable-parameters,
         -zircon-*,
 "
 #        -readability-else-after-return,
