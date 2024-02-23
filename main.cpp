@@ -28,6 +28,8 @@ public:
   using hash_t = size_t;
   using buf_t = std::vector<char>;
 
+  // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
+
     /** file signature */
   struct FSig
   {
@@ -40,6 +42,7 @@ public:
     std::vector<hash_t> m_hash;
     std::vector<std::string> m_dups;
   };
+  // NOLINTEND(misc-non-private-member-variables-in-classes)
 
   struct FSigExt
   {
@@ -154,7 +157,6 @@ private:
 
 
   // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  // NOLINTNEXTLINE(hicpp-named-parameter,readability-named-parameter)
 int main(int argc, char const * argv[])
 {
   try
