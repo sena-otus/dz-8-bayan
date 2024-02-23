@@ -113,14 +113,14 @@ public:
       std::cout << "too small, skipping\n";
       return;
     }
-    std::cout << " (" << size << "): \n";
+    std::cout << size << " byte(s): ";
     FSig fs2(f2_de.path().string(), size);
     FSigExt fse2(fs2, m_bs, m_buf);
     bool dup_found = false;
     for(auto && fs1 : m_files)
     {
       FSigExt fse1(fs1, m_bs, m_buf);
-      std::cout << "  Compare with " << fse1.path() << "(" <<  fse1.size() << "): ";
+        //std::cout << "  Compare with " << fse1.path() << "(" <<  fse1.size() << "): ";
       if(fse1.size() == fse2.size())
       {
         bool hash_mismatch = false;
@@ -128,26 +128,26 @@ public:
         {
           if(fse1.getHash(ii) != fse2.getHash(ii))
           {
-            std::cout << "  hash mismatch\n";
+              //std::cout << "  hash mismatch\n";
             hash_mismatch = true;
             break;
           }
         }
         if(!hash_mismatch)
         {
-          std::cout << "is a dup of " + fse2.path() + "!\n";
+          std::cout << "is a dup of " + fse1.path() + "!\n";
           dup_found = true;
           fse1.emplace_back_dup(fse2.path());
           break;
         }
       }
       else {
-        std::cout << "  size mismatch\n";
+          //std::cout << "  size mismatch\n";
       }
     }
     if(!dup_found)
     {
-      std::cout << "dups not found, adding\n";
+      std::cout << "dups not found\n";
       m_files.emplace_back(fse2.fsig());
     }
   }
