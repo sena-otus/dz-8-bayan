@@ -170,14 +170,14 @@ int main(int argc, char const * argv[])
     std::string hash;
     po::options_description desc("Allowed options");
     desc.add_options()
-      ("help,h"     , "produce help message"     )
-      ("dirs,d"     , po::value(&toscan   ), "dir to scan"              )
-      ("exclude,x"  , po::value(&toex     ), "dir to exclude"           )
-      ("recursive,r", po::value(&recursive), "1: scan subdirs recursively, 0: no recursion" )
-      ("minsize,m"  , po::value(&minsize  ), "min file size, must be positive (default 1)")
-      ("wildcard,w" , po::value(&wc       ), "wildcard for filenames"   )
+      ("help,h"     ,                        "produce help message"                        )
+      ("dirs,d"     , po::value(&toscan   ), "dir to scan"                                 )
+      ("exclude,x"  , po::value(&toex     ), "dir to exclude"                              )
+      ("recursive,r", po::value(&recursive), "1: scan subdirs recursively, 0: no recursion")
+      ("minsize,m"  , po::value(&minsize  ), "min file size, must be positive (default 1)" )
+      ("wildcard,w" , po::value(&wc       ), "wildcard for filenames"                      )
       ("blocksize,b", po::value(&bs       ), "blocksize, must be positive  (default 512)"  )
-      ("hash,h"     , po::value(&hash     ), "hash to use (default md5)")
+      ("hash"       , po::value(&hash     ), "hash to use (default md5)"                   )
       ;
 
 
