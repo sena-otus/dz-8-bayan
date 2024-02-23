@@ -13,6 +13,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <utility>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -26,98 +27,106 @@ public:
   using hash_t = size_t;
   using buf_t = std::vector<char>;
 
-  struct F
+    /** file signature */
+  struct FSig
   {
-    std::string path;
-    boost::uintmax_t size{};
-    std::list<hash_t> hash;
-    std::list<std::string> dups;
+    FSig(const std::string&_path, const boost::uintmax_t _size)
+      : m_path(_path), m_size(_size)
+    {}
+
+    std::string m_path;
+    boost::uintmax_t m_size;
+    std::vector<hash_t> m_hash;
+    std::vector<std::string> m_dups;
+  };
+
+  struct FSigExt
+  {
+    FSigExt(FSig &fsig, size_t bs, buf_t &buf)
+      : m_fsig(fsig), m_bs(bs), m_buf(buf)
+    {}
+
+    hash_t getHash(unsigned blocki)
+    {
+      if(blocki < m_fsig.m_hash.size())
+      {
+        return m_fsig.m_hash[blocki];
+      }
+      if(!m_ifs.is_open())
+      {
+        std::ifstream fin(m_fsig.m_path, std::ios_base::in|std::ios::binary);
+        if(!fin.is_open())
+        {
+          throw std::runtime_error("can not open file for reading");
+        }
+        m_ifs = std::move(fin);
+        if(blocki != 0) {
+          m_ifs.seekg((std::streamoff)m_bs * blocki);
+        }
+      }
+      m_ifs.read(m_buf.data(), (std::streamsize)m_bs);
+      if(m_ifs.bad()) {
+        throw std::runtime_error("error reading file " + m_fsig.m_path);
+      }
+      if(m_bs*(blocki+1) > m_fsig.m_size)
+      {
+        for(unsigned kk = m_fsig.m_size % m_bs; kk < m_bs;++kk) {
+          m_buf[kk] = 0;
+        }
+      }
+      auto h = boost::hash<buf_t>()(m_buf);
+      m_fsig.m_hash.emplace_back(h);
+      return h;
+    }
+
+    std::string path() const { return m_fsig.m_path;}
+    boost::uintmax_t size() const { return m_fsig.m_size;}
+    FSig fsig() const { return m_fsig;}
+
+
+    template<typename ...Args>
+    void emplace_back_dup(Args && ...args) { m_fsig.m_dups.emplace_back(std::forward<Args>(args)...);}
+
+  private:
+    FSig &m_fsig;
+    const size_t m_bs;
+    buf_t &m_buf;
+    std::ifstream m_ifs;
   };
 
   Bayan(const boost::uintmax_t minsize, const size_t blocksize)
     : m_minsize(minsize), m_bs(blocksize), m_buf(m_bs)
   {}
 
-  hash_t getHash(std::ifstream &fs, F &f, unsigned ii)
-  {
-    if(!fs.is_open())
-    {
-      std::ifstream fin(f.path, std::ios_base::in|std::ios::binary);
-      if(!fin.is_open())
-      {
-        throw std::runtime_error("can not open file for reading");
-      }
-      fs = std::move(fin);
-      if(ii != 0) {
-        fs.seekg((std::streamoff)m_bs * ii);
-      }
-    }
-    fs.read(m_buf.data(), (std::streamsize)m_bs);
-    if(fs.bad()) {
-      throw std::runtime_error("error reading file " + f.path);
-    }
-    if(m_bs*(ii+1) > f.size)
-    {
-      for(unsigned kk = f.size % m_bs; kk < m_bs;++kk) {
-        m_buf[kk] = 0;
-      }
-    }
-    auto h = boost::hash<buf_t>()(m_buf);
-    f.hash.emplace_back(h);
-    return h;
-  }
-
   void processFile(fs::directory_entry &f2_de)
   {
     std::cout << "Processing " << f2_de.path() << " ";
 
-    F f2;
     if(!fs::is_regular_file(f2_de))
     {
       std::cout << "dir, skipping\n";
       return;
     }
-    f2.size = file_size(f2_de);
-    if(f2.size < m_minsize)
+    auto size = file_size(f2_de);
+    if(size < m_minsize)
     {
       std::cout << "too small, skipping\n";
       return;
     }
-    std::cout << " (" << f2.size << "): \n";
-    f2.path = f2_de.path().string();
+    std::cout << " (" << size << "): \n";
+    FSig fs2(f2_de.path().string(), size);
+    FSigExt fse2(fs2, m_bs, m_buf);
     bool dup_found = false;
-    std::ifstream f2s;
-    for(auto && f1 : m_files)
+    for(auto && fs1 : m_files)
     {
-      std::cout << "  Compare with " << f1.path << "(" <<  f1.size << "): ";
-      if(f1.size == f2.size)
+      FSigExt fse1(fs1, m_bs, m_buf);
+      std::cout << "  Compare with " << fse1.path() << "(" <<  fse1.size() << "): ";
+      if(fse1.size() == fse2.size())
       {
-        auto hit1 = f1.hash.begin();
-        std::ifstream f1s;
-
-        auto hit2 = f2.hash.begin();
-        hash_t h1 = 0;
-        hash_t h2 = 0;
         bool hash_mismatch = false;
-        for(unsigned ii = 0; ii < ((f1.size-1)/m_bs+1); ++ii)
+        for(unsigned ii = 0; ii < ((fse1.size()-1)/m_bs+1); ++ii)
         {
-          if(hit1 == f1.hash.end())
-          {
-            h1 = getHash(f1s, f1, ii);
-          }
-          else {
-            h1 = *hit1;
-            hit1++;
-          }
-          if(hit2 == f2.hash.end())
-          {
-            h2 = getHash(f2s, f2, ii);
-          }
-          else {
-            h2 = *hit2;
-            hit2++;
-          }
-          if(h1 != h2)
+          if(fse1.getHash(ii) != fse2.getHash(ii))
           {
             std::cout << "  hash mismatch\n";
             hash_mismatch = true;
@@ -126,9 +135,9 @@ public:
         }
         if(!hash_mismatch)
         {
-          std::cout << "is a dup of " + f2.path + "!\n";
+          std::cout << "is a dup of " + fse2.path() + "!\n";
           dup_found = true;
-          f1.dups.emplace_back(f2.path);
+          fse1.emplace_back_dup(fse2.path());
           break;
         }
       }
@@ -139,14 +148,14 @@ public:
     if(!dup_found)
     {
       std::cout << "dups not found, adding\n";
-      m_files.emplace_back(f2);
+      m_files.emplace_back(fse2.fsig());
     }
   }
 private:
   const boost::uintmax_t m_minsize;
   const size_t m_bs;
   buf_t m_buf;
-  std::vector<F> m_files;
+  std::vector<FSig> m_files;
 };
 
 
