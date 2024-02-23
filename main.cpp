@@ -14,6 +14,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <utility>
+#include <regex>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -94,26 +95,17 @@ public:
     std::ifstream m_ifs;
   };
 
-  Bayan(const boost::uintmax_t minsize, const size_t blocksize)
-    : m_minsize(minsize), m_bs(blocksize), m_buf(m_bs)
+  Bayan(const boost::uintmax_t minsize, const size_t blocksize, std::regex && rx)
+    : m_minsize(minsize), m_bs(blocksize), m_buf(m_bs), m_rx(rx)
   {}
 
   void processFile(fs::directory_entry &f2_de)
   {
-    std::cout << "Processing " << f2_de.path() << " ";
-
-    if(!fs::is_regular_file(f2_de))
-    {
-      std::cout << "dir, skipping\n";
-      return;
-    }
+    if(!fs::is_regular_file(f2_de)) return;
+    if(!std::regex_match(f2_de.path().filename().string(), m_rx)) return;
     auto size = file_size(f2_de);
-    if(size < m_minsize)
-    {
-      std::cout << "too small, skipping\n";
-      return;
-    }
-    std::cout << size << " byte(s): ";
+    if(size < m_minsize) return;
+    std::cout << "Processing " << f2_de.path() << " " << size << " byte(s): ";
     FSig fs2(f2_de.path().string(), size);
     FSigExt fse2(fs2, m_bs, m_buf);
     bool dup_found = false;
@@ -156,6 +148,7 @@ private:
   const size_t m_bs;
   buf_t m_buf;
   std::vector<FSig> m_files;
+  std::regex m_rx;
 };
 
 
@@ -170,7 +163,7 @@ int main(int argc, char const * argv[])
     std::vector<std::string> toex;
     unsigned recursive{1};
     size_t minsize{1};
-    std::string wc;
+    std::string wc{".*"};
     size_t bs{512};
     std::string hash;
     po::options_description desc("Allowed options");
@@ -179,9 +172,9 @@ int main(int argc, char const * argv[])
       ("dirs,d"     , po::value(&toscan   ), "dir to scan"              )
       ("exclude,x"  , po::value(&toex     ), "dir to exclude"           )
       ("recursive,r", po::value(&recursive), "1: scan subdirs recursively, 0: no recursion" )
-      ("minsize,m"  , po::value(&minsize  ), "min file size, must larger than 0 (default 1)")
+      ("minsize,m"  , po::value(&minsize  ), "min file size, must be positive (default 1)")
       ("wildcard,w" , po::value(&wc       ), "wildcard for filenames"   )
-      ("blocksize,b", po::value(&bs       ), "blocksize (default 512)"  )
+      ("blocksize,b", po::value(&bs       ), "blocksize, must be positive  (default 512)"  )
       ("hash,h"     , po::value(&hash     ), "hash to use (default md5)")
       ;
 
@@ -205,7 +198,8 @@ int main(int argc, char const * argv[])
       toscan.emplace_back(".");
     }
 
-    Bayan bayan(minsize, bs);
+
+    Bayan bayan(minsize, bs, std::regex(wc));
 
     for(auto && dirname : toscan)
     {
