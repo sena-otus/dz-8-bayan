@@ -3,17 +3,12 @@
  * @brief Exercise 8, search dup files
  *  */
 
-
-#include <boost/container_hash/hash.hpp>
+#include "bayan.h"
 #include <boost/filesystem.hpp>
-#include <boost/filesystem/directory.hpp>
 #include <boost/program_options.hpp>
-#include <functional>
 #include <ios>
 #include <iostream>
-#include <fstream>
 #include <stdexcept>
-#include <utility>
 #include <regex>
 
 namespace po = boost::program_options;
@@ -21,138 +16,6 @@ namespace fs = boost::filesystem;
 
 const int generic_errorcode = 102;
 const int nodir_errorcode = 103;
-
-class Bayan
-{
-public:
-  using hash_t = size_t;
-  using buf_t = std::vector<char>;
-
-  // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
-
-    /** file signature */
-  struct FSig
-  {
-    FSig(const std::string&_path, const boost::uintmax_t _size)
-      : m_path(_path), m_size(_size)
-    {}
-
-    std::string m_path;
-    boost::uintmax_t m_size;
-    std::vector<hash_t> m_hash;
-    std::vector<std::string> m_dups;
-  };
-  // NOLINTEND(misc-non-private-member-variables-in-classes)
-
-  struct FSigExt
-  {
-    FSigExt(FSig &fsig, size_t bs, buf_t &buf)
-      : m_fsig(fsig), m_bs(bs), m_buf(buf)
-    {}
-
-    hash_t getHash(unsigned blocki)
-    {
-      if(blocki < m_fsig.m_hash.size())
-      {
-        return m_fsig.m_hash[blocki];
-      }
-      if(!m_ifs.is_open())
-      {
-        std::ifstream fin(m_fsig.m_path, std::ios_base::in|std::ios::binary);
-        if(!fin.is_open())
-        {
-          throw std::runtime_error("can not open file for reading");
-        }
-        m_ifs = std::move(fin);
-        if(blocki != 0) {
-          m_ifs.seekg((std::streamoff)m_bs * blocki);
-        }
-      }
-      m_ifs.read(m_buf.data(), (std::streamsize)m_bs);
-      if(m_ifs.bad()) {
-        throw std::runtime_error("error reading file " + m_fsig.m_path);
-      }
-      if(m_bs*(blocki+1) > m_fsig.m_size)
-      {
-        for(unsigned kk = m_fsig.m_size % m_bs; kk < m_bs;++kk) {
-          m_buf[kk] = 0;
-        }
-      }
-      auto h = boost::hash<buf_t>()(m_buf);
-      m_fsig.m_hash.emplace_back(h);
-      return h;
-    }
-
-    std::string path() const { return m_fsig.m_path;}
-    boost::uintmax_t size() const { return m_fsig.m_size;}
-    FSig fsig() const { return m_fsig;}
-
-
-    template<typename ...Args>
-    void emplace_back_dup(Args && ...args) { m_fsig.m_dups.emplace_back(std::forward<Args>(args)...);}
-
-  private:
-    FSig &m_fsig;
-    const size_t m_bs;
-    buf_t &m_buf;
-    std::ifstream m_ifs;
-  };
-
-  Bayan(const boost::uintmax_t minsize, const size_t blocksize, std::regex && rx)
-    : m_minsize(minsize), m_bs(blocksize), m_buf(m_bs), m_rx(rx)
-  {}
-
-  void processFile(fs::directory_entry &f2_de)
-  {
-    if(!fs::is_regular_file(f2_de)) return;
-    if(!std::regex_match(f2_de.path().filename().string(), m_rx)) return;
-    auto size = file_size(f2_de);
-    if(size < m_minsize) return;
-    std::cout << "Processing " << f2_de.path() << " " << size << " byte(s): ";
-    FSig fs2(f2_de.path().string(), size);
-    FSigExt fse2(fs2, m_bs, m_buf);
-    bool dup_found = false;
-    for(auto && fs1 : m_files)
-    {
-      FSigExt fse1(fs1, m_bs, m_buf);
-        //std::cout << "  Compare with " << fse1.path() << "(" <<  fse1.size() << "): ";
-      if(fse1.size() == fse2.size())
-      {
-        bool hash_mismatch = false;
-        for(unsigned ii = 0; ii < ((fse1.size()-1)/m_bs+1); ++ii)
-        {
-          if(fse1.getHash(ii) != fse2.getHash(ii))
-          {
-              //std::cout << "  hash mismatch\n";
-            hash_mismatch = true;
-            break;
-          }
-        }
-        if(!hash_mismatch)
-        {
-          std::cout << "is a dup of " + fse1.path() + "!\n";
-          dup_found = true;
-          fse1.emplace_back_dup(fse2.path());
-          break;
-        }
-      }
-      else {
-          //std::cout << "  size mismatch\n";
-      }
-    }
-    if(!dup_found)
-    {
-      std::cout << "dups not found\n";
-      m_files.emplace_back(fse2.fsig());
-    }
-  }
-private:
-  const boost::uintmax_t m_minsize;
-  const size_t m_bs;
-  buf_t m_buf;
-  std::vector<FSig> m_files;
-  std::regex m_rx;
-};
 
 
 

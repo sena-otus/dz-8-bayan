@@ -21,7 +21,7 @@ endif()
 
 configure_file(version.h.in version.h)
 
-add_executable(bayan main.cpp)
+add_executable(bayan main.cpp bayan.cpp)
 
 target_link_libraries(bayan Boost::filesystem Boost::program_options)
 
