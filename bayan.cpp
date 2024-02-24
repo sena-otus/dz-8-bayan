@@ -44,17 +44,17 @@ Bayan::processFile(fs::directory_entry &f2_de)
     if(size < m_minsize) return;
     std::cout << "Processing " << f2_de.path() << " " << size << " byte(s): ";
     FSig fs2(f2_de.path().string(), size);
-    FSigLoader fse2(fs2, m_bs, m_buf);
+    FSigLoader fsloader2(fs2, m_bs, m_buf);
     bool dup_found = false;
     for(auto && fs1 : m_files)
     {
-      FSigLoader fse1(fs1, m_bs, m_buf);
-      if(fse1.size() == fse2.size())
+      FSigLoader fsloader1(fs1, m_bs, m_buf);
+      if(fsloader1.size() == fsloader2.size())
       {
         bool hash_mismatch = false;
-        for(unsigned ii = 0; ii < ((fse1.size()-1)/m_bs+1); ++ii)
+        for(unsigned ii = 0; ii < ((fsloader1.size()-1)/m_bs+1); ++ii)
         {
-          if(fse1.getHash(ii) != fse2.getHash(ii))
+          if(fsloader1.getHash(ii) != fsloader2.getHash(ii))
           {
             hash_mismatch = true;
             break;
@@ -62,12 +62,12 @@ Bayan::processFile(fs::directory_entry &f2_de)
         }
         if(!hash_mismatch)
         {
-          std::cout << "is a dup of " + fse1.path() + "!\n";
+          std::cout << "is a dup of " + fsloader1.path() + "!\n";
           dup_found = true;
-          fse1.emplace_back_dup(fse2.path());
+          fsloader1.emplace_back_dup(fsloader2.path());
           break;
         }
       }
     }
-    if(!dup_found) m_files.emplace_back(fse2.fsig());
+    if(!dup_found) m_files.emplace_back(fsloader2.fsig());
   }
