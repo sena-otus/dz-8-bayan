@@ -16,6 +16,8 @@ public:
 
   void processFile(boost::filesystem::directory_entry &f2_de);
 
+  void printDups() const;
+
 private:
   using hash_t = hash32::hash_t;
   using buf_t = hash32::buf_t;

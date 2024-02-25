@@ -77,8 +77,6 @@ int main(int argc, char const * argv[])
       return generic_errorcode;
     }
 
-
-
     Bayan bayan(minsize, bs, std::regex(wc), *hashfunc);
 
     for(auto && dirname : toscan)
@@ -97,8 +95,6 @@ int main(int argc, char const * argv[])
         return (nodir_errorcode);
       }
 
-      std::cout << dir << " is a directory containing:\n";
-
       if(recursive)
       {
         for (auto && f : fs::recursive_directory_iterator(dir))
@@ -113,6 +109,7 @@ int main(int argc, char const * argv[])
         }
       }
     }
+    bayan.printDups();
   }
   catch(const std::exception &e)
   {

@@ -55,7 +55,6 @@ Bayan::processFile(fs::directory_entry &f2_de)
   if(!std::regex_match(f2_de.path().filename().string(), m_rx)) return;
   auto size = file_size(f2_de);
   if(size < m_minsize) return;
-    // std::cout << "Processing " << f2_de.path() << " " << size << " byte(s): ";
   FSig fs2(f2_de.path().string(), size);
   FSigLoader fsloader2(fs2, *this);
   bool dup_found = false;
@@ -75,7 +74,6 @@ Bayan::processFile(fs::directory_entry &f2_de)
       }
       if(!hash_mismatch)
       {
-        std::cout << f2_de.path() << " is a dup of " << fsloader1.path() << "!\n";
         dup_found = true;
         fsloader1.emplace_back_dup(fsloader2.path());
         break;
@@ -83,4 +81,20 @@ Bayan::processFile(fs::directory_entry &f2_de)
     }
   }
   if(!dup_found) m_files.emplace_back(fsloader2.fsig());
+}
+
+void Bayan::printDups() const
+{
+  for(auto && f : m_files)
+  {
+    if(!f.m_dups.empty())
+    {
+      std::cout << f.m_path << "\n";
+      for(auto && fdup : f.m_dups)
+      {
+        std::cout << fdup << "\n";
+      }
+      std::cout << "\n";
+    }
+  }
 }
