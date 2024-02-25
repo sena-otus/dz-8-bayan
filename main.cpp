@@ -34,15 +34,15 @@ int main(int argc, char const * argv[])
     std::string hashname{"boosthash"};
     po::options_description desc("Allowed options");
     desc.add_options()
-      ("help,h"     ,                        "produce help message"                        )
-      ("dirs,d"     , po::value(&toscan   ), "dir to scan"                                 )
-      ("exclude,x"  , po::value(&toex     ), "dir to exclude"                              )
-      ("recursive,r", po::value(&recursive), "1: scan subdirs recursively, 0: no recursion")
-      ("minsize,m"  , po::value(&minsize  ), "min file size, must be positive (default 1)" )
-      ("wildcard,w" , po::value(&wc       ), "wildcard for filenames"                      )
-      ("blocksize,b", po::value(&bs       ), "blocksize, must be positive  (default 512)"  )
-      ("hash"       , po::value(&hashname ), "hash to use (default is boosthash)"          )
-      ("list-hash"  ,                        "list supported hash algorithms and exit"     )
+      ("help,h"     ,                        "produce help message"                           )
+      ("dirs,d"     , po::value(&toscan   ), "path to scan, default is working directory"     )
+      ("exclude,x"  , po::value(&toex     ), "directory name to exclude"                      )
+      ("recursive,r", po::value(&recursive), "1: scan recursively (default), 0: no recursion" )
+      ("minsize,m"  , po::value(&minsize  ), "min file size, must be positive (default 1)"    )
+      ("wildcard,w" , po::value(&wc       ), "wildcard for filenames"                         )
+      ("blocksize,b", po::value(&bs       ), "blocksize, must be positive  (default 512)"     )
+      ("hash"       , po::value(&hashname ), "hash to use (default is boosthash)"             )
+      ("list-hash"  ,                        "list supported hash algorithms and exit"        )
       ;
 
 
@@ -79,6 +79,7 @@ int main(int argc, char const * argv[])
 
     Bayan bayan(minsize, bs, std::regex(wc), *hashfunc);
 
+    std::set<std::string> stoex(toex.begin(), toex.end());
     for(auto && dirname : toscan)
     {
       const fs::path dir(dirname);
@@ -97,9 +98,13 @@ int main(int argc, char const * argv[])
 
       if(recursive)
       {
-        for (auto && f : fs::recursive_directory_iterator(dir))
+        for (fs::recursive_directory_iterator fit(dir), end; fit!= end; ++fit)
         {
-          bayan.processFile(f);
+          if (stoex.find(fit->path().filename().string()) != stoex.end())
+          {
+            fit.disable_recursion_pending();
+          }
+          bayan.processFile(*fit);
         }
       }
       else {
