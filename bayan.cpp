@@ -85,16 +85,18 @@ Bayan::processFile(fs::directory_entry &f2_de)
 
 void Bayan::printDups() const
 {
+  bool first_group{true};
   for(auto && f : m_files)
   {
     if(!f.m_dups.empty())
     {
+      if(!first_group) std::cout << "\n";
+      else  first_group = false;
       std::cout << f.m_path << "\n";
       for(auto && fdup : f.m_dups)
       {
         std::cout << fdup << "\n";
       }
-      std::cout << "\n";
     }
   }
 }
