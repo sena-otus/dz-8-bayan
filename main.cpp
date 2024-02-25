@@ -77,7 +77,7 @@ int main(int argc, char const * argv[])
       return generic_errorcode;
     }
 
-    Bayan bayan(minsize, bs, std::regex(wc), *hashfunc);
+    Bayan bayan(minsize, bs, std::regex(wc, std::regex_constants::icase), *hashfunc);
 
     std::set<std::string> stoex(toex.begin(), toex.end());
     for(auto && dirname : toscan)
