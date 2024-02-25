@@ -4,6 +4,7 @@
  *  */
 
 #include "bayan.h"
+#include "hash32.h"
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <ios>
@@ -26,11 +27,11 @@ int main(int argc, char const * argv[])
   {
     std::vector<std::string> toscan;
     std::vector<std::string> toex;
-    unsigned recursive{1};
+    bool recursive{true};
     size_t minsize{1};
     std::string wc{".*"};
     size_t bs{512};
-    std::string hash;
+    std::string hashname{"boosthash"};
     po::options_description desc("Allowed options");
     desc.add_options()
       ("help,h"     ,                        "produce help message"                        )
@@ -40,7 +41,8 @@ int main(int argc, char const * argv[])
       ("minsize,m"  , po::value(&minsize  ), "min file size, must be positive (default 1)" )
       ("wildcard,w" , po::value(&wc       ), "wildcard for filenames"                      )
       ("blocksize,b", po::value(&bs       ), "blocksize, must be positive  (default 512)"  )
-      ("hash"       , po::value(&hash     ), "hash to use (default md5)"                   )
+      ("hash"       , po::value(&hashname ), "hash to use (default is boosthash)"          )
+      ("list-hash"  ,                        "list supported hash algorithms and exit"     )
       ;
 
 
@@ -48,23 +50,36 @@ int main(int argc, char const * argv[])
     po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
     po::notify(vm);
 
-    if((vm.count("help") != 0U) || recursive > 1 || minsize < 1)
+    if((vm.count("help") != 0U) || minsize < 1)
     {
       std::cout << "Find duplicate files.\n\n"
                 << "Usage: bayan -h\n"
                 << "   or: bayan [-d <dir1> [-d <dir2> [...]]]  [-x <direx1> [ -x <direx2> [...]]] [-r <0|1>] [-m <minsize>] [-b <blocksize>] [-h <hash>]\n"
+                << "   or: bayan --list-hash\n"
                 << "\n\n"
                 << desc;
       return 0;
     }
 
-    if(toscan.empty())
+    if(vm.count("list-hash")!= 0U)
     {
-      toscan.emplace_back(".");
+      hash32::print_supported();
+      return 0;
+    }
+
+    if(toscan.empty()) toscan.emplace_back(".");
+
+    auto hashfunc = hash32::hashFuncByName(hashname);
+    if(!hashfunc)
+    {
+      std::cerr << "Unknown hash name '" << hashname << "'\n";
+      hash32::print_supported();
+      return generic_errorcode;
     }
 
 
-    Bayan bayan(minsize, bs, std::regex(wc));
+
+    Bayan bayan(minsize, bs, std::regex(wc), *hashfunc);
 
     for(auto && dirname : toscan)
     {
@@ -84,7 +99,7 @@ int main(int argc, char const * argv[])
 
       std::cout << dir << " is a directory containing:\n";
 
-      if(recursive != 0)
+      if(recursive)
       {
         for (auto && f : fs::recursive_directory_iterator(dir))
         {
