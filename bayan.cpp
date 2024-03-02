@@ -1,5 +1,5 @@
 #include "bayan.h"
-#include "hash32.h"
+#include "hash64.h"
 
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -37,7 +37,7 @@ Bayan::FSigLoader::getHash(unsigned blocki)
   return h;
 }
 
-Bayan::Bayan(const boost::uintmax_t minsize, const size_t blocksize, std::regex && rx, hash32::hash_func_t &hf)
+Bayan::Bayan(const boost::uintmax_t minsize, const size_t blocksize, std::regex && rx, hash64::hash_func_t &hf)
   : m_minsize(minsize), m_bs(blocksize), m_buf(m_bs), m_rx(rx), m_hf(hf)
 {
 }

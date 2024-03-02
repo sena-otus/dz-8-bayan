@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hash32.h"
+#include "hash64.h"
 #include <boost/filesystem/directory.hpp>
 #include <boost/cstdint.hpp>
 #include <fstream>
@@ -12,15 +12,15 @@
 class Bayan
 {
 public:
-  Bayan( boost::uintmax_t minsize, size_t blocksize, std::regex&& rx, hash32::hash_func_t &hf);
+  Bayan( boost::uintmax_t minsize, size_t blocksize, std::regex&& rx, hash64::hash_func_t &hf);
 
   void processFile(boost::filesystem::directory_entry &f2_de);
 
   void printDups() const;
 
 private:
-  using hash_t = hash32::hash_t;
-  using buf_t = hash32::buf_t;
+  using hash_t = hash64::hash_t;
+  using buf_t = hash64::buf_t;
 
     // NOLINTBEGIN(misc-non-private-member-variables-in-classes,modernize-pass-by-value)
 
@@ -68,5 +68,5 @@ private:
   buf_t m_buf;
   std::vector<FSig> m_files;
   std::regex m_rx;
-  hash32::hash_func_t m_hf;
+  hash64::hash_func_t m_hf;
 };

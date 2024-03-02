@@ -4,7 +4,7 @@
  *  */
 
 #include "bayan.h"
-#include "hash32.h"
+#include "hash64.h"
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <ios>
@@ -63,17 +63,17 @@ int main(int argc, char const * argv[])
 
     if(vm.count("list-hash")!= 0U)
     {
-      hash32::print_supported();
+      hash64::print_supported();
       return 0;
     }
 
     if(toscan.empty()) toscan.emplace_back(".");
 
-    auto hashfunc = hash32::hashFuncByName(hashname);
+    auto hashfunc = hash64::hashFuncByName(hashname);
     if(!hashfunc)
     {
       std::cerr << "Unknown hash name '" << hashname << "'\n";
-      hash32::print_supported();
+      hash64::print_supported();
       return generic_errorcode;
     }
 

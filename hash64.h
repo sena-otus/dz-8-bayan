@@ -1,11 +1,10 @@
 #pragma once
 
-#include <boost/crc.hpp>
-#include <boost/container_hash/hash.hpp>
 #include <vector>
 #include <optional>
+#include <string>
 
-namespace hash32
+namespace hash64
 {
   using hash_t = std::size_t;
   using buf_t = std::vector<char>;
