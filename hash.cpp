@@ -108,11 +108,13 @@ namespace hash
 
   void print_supported()
   {
-    std::cout << "List of supported hash algorithms:\n";
+    std::string sep;
     for(auto && h : getHashDict())
     {
-      std::cout << h.first << "\n";
+      std::cout << sep << h.first;
+      sep = " ";
     }
+    std::cout << "\n";
   }
 
 }

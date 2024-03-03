@@ -42,7 +42,6 @@ int main(int argc, char const * argv[])
       ("wildcard,w" , po::value(&wc       ), "regex for filenames (default .*)"               )
       ("blocksize,b", po::value(&bs       ), "blocksize, must be positive  (default 512)"     )
       ("hash"       , po::value(&hashname ), "hash to use (default is boosthash)"             )
-      ("list-hash"  ,                        "list supported hash algorithms and exit"        )
       ;
 
 
@@ -55,15 +54,11 @@ int main(int argc, char const * argv[])
       std::cout << "Find duplicate files.\n\n"
                 << "Usage: bayan -h\n"
                 << "   or: bayan [-d <dir1> [-d <dir2> [...]]]  [-x <direx1> [ -x <direx2> [...]]] [-r <0|1>] [-m <minsize>] [-b <blocksize>] [--hash <hash>]\n"
-                << "   or: bayan --list-hash\n"
                 << "\n\n"
                 << desc;
-      return 0;
-    }
-
-    if(vm.count("list-hash")!= 0U)
-    {
+      std::cout << "\nSupported hash algo: ";
       hash::print_supported();
+
       return 0;
     }
 
