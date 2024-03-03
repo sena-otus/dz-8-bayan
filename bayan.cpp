@@ -1,5 +1,5 @@
 #include "bayan.h"
-#include "hash64.h"
+#include "hash.h"
 
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -32,30 +32,23 @@ Bayan::FSigLoader::getHash(unsigned blocki)
       buf[kk] = 0;
     }
   }
-  auto h = m_bayan.hash();
-  m_fsig.m_hash.emplace_back(h);
-  return h;
+  return m_fsig.m_hash.emplace_back(m_bayan.m_hf(buf));
 }
 
-Bayan::Bayan(const boost::uintmax_t minsize, const size_t blocksize, std::regex && rx, hash64::hash_func_t &hf)
+Bayan::Bayan(const boost::uintmax_t minsize, const size_t blocksize, std::regex && rx, hash::hash_func_t &hf)
   : m_minsize(minsize), m_bs(blocksize), m_buf(m_bs), m_rx(rx), m_hf(hf)
 {
 }
 
-Bayan::hash_t Bayan::hash() const
-{
-  return m_hf(m_buf);
-}
-
 
 void
-Bayan::processFile(fs::directory_entry &f2_de)
+Bayan::processFile(const fs::path &f2)
 {
-  if(!fs::is_regular_file(f2_de)) return;
-  if(!std::regex_match(f2_de.path().filename().string(), m_rx)) return;
-  auto size = file_size(f2_de);
+  if(!fs::is_regular_file(f2)) return;
+  if(!std::regex_match(f2.filename().string(), m_rx)) return;
+  auto size = file_size(f2);
   if(size < m_minsize) return;
-  FSig fs2(f2_de.path().string(), size);
+  FSig fs2(f2.string(), size);
   FSigLoader fsloader2(fs2, *this);
   bool dup_found = false;
   for(auto && fs1 : m_files)
@@ -83,7 +76,7 @@ Bayan::processFile(fs::directory_entry &f2_de)
   if(!dup_found) m_files.emplace_back(fsloader2.fsig());
 }
 
-void Bayan::printDups() const
+void Bayan::printDups(std::ostream &os) const
 {
   bool first_group{true};
   for(auto && f : m_files)
@@ -92,10 +85,10 @@ void Bayan::printDups() const
     {
       if(!first_group) std::cout << "\n";
       else  first_group = false;
-      std::cout << f.m_path << "\n";
+      os << f.m_path << "\n";
       for(auto && fdup : f.m_dups)
       {
-        std::cout << fdup << "\n";
+        os << fdup << "\n";
       }
     }
   }

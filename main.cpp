@@ -4,7 +4,7 @@
  *  */
 
 #include "bayan.h"
-#include "hash64.h"
+#include "hash.h"
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <ios>
@@ -54,7 +54,7 @@ int main(int argc, char const * argv[])
     {
       std::cout << "Find duplicate files.\n\n"
                 << "Usage: bayan -h\n"
-                << "   or: bayan [-d <dir1> [-d <dir2> [...]]]  [-x <direx1> [ -x <direx2> [...]]] [-r <0|1>] [-m <minsize>] [-b <blocksize>] [-h <hash>]\n"
+                << "   or: bayan [-d <dir1> [-d <dir2> [...]]]  [-x <direx1> [ -x <direx2> [...]]] [-r <0|1>] [-m <minsize>] [-b <blocksize>] [--hash <hash>]\n"
                 << "   or: bayan --list-hash\n"
                 << "\n\n"
                 << desc;
@@ -63,17 +63,17 @@ int main(int argc, char const * argv[])
 
     if(vm.count("list-hash")!= 0U)
     {
-      hash64::print_supported();
+      hash::print_supported();
       return 0;
     }
 
     if(toscan.empty()) toscan.emplace_back(".");
 
-    auto hashfunc = hash64::hashFuncByName(hashname);
+    auto hashfunc = hash::hashFuncByName(hashname);
     if(!hashfunc)
     {
       std::cerr << "Unknown hash name '" << hashname << "'\n";
-      hash64::print_supported();
+      hash::print_supported();
       return generic_errorcode;
     }
 
@@ -104,7 +104,7 @@ int main(int argc, char const * argv[])
           {
             fit.disable_recursion_pending();
           }
-          bayan.processFile(*fit);
+          bayan.processFile(fit->path());
         }
       }
       else {

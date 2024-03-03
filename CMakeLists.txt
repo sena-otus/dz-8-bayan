@@ -21,7 +21,7 @@ endif()
 
 configure_file(version.h.in version.h)
 
-add_executable(bayan main.cpp bayan.cpp hash64.cpp)
+add_executable(bayan main.cpp bayan.cpp hash.cpp)
 
 target_link_libraries(bayan Boost::filesystem Boost::program_options)
 
@@ -38,7 +38,7 @@ if(WITH_TEST)
     find_package(GTest REQUIRED)
     enable_testing()
 
-    add_executable(gtest_bayan gtest_bayan.cpp)
+    add_executable(gtest_bayan gtest_bayan.cpp bayan.cpp hash.cpp)
 
     set_target_properties(gtest_bayan PROPERTIES
         CXX_STANDARD 20
