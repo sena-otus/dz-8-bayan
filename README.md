@@ -3,7 +3,7 @@ dz-8-bayan. Search dups on filesystem using hashes.
 
 Usage: bayan -h
 
-   or: bayan [-d <dir1> [-d <dir2> [...]]]  [-x <direx1> [ -x <direx2> [...]]] [-r <0|1>] [-m <minsize>] [-b <blocksize>] [--hash <hash>]
+   or: bayan [-d \<dir1> [-d \<dir2> [...]]]  [-x \<direx1> [ -x \<direx2> [...]]] [-r \<0|1>] [-m \<minsize>] [-b \<blocksize>] [--hash \<hash>]
 
 
 Allowed options:
